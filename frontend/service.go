@@ -353,7 +353,6 @@ func (s *lwdStreamer) GetTreeState(ctx context.Context, id *walletrpc.BlockID) (
 	}
 	// The Zcash z_gettreestate rpc accepts either a block height or block hash
 	params := make([]json.RawMessage, 1)
-	var hashJSON []byte
 	if id.Height > 0 {
 		heightJSON, err := json.Marshal(strconv.Itoa(int(id.Height)))
 		if err != nil {
@@ -368,48 +367,37 @@ func (s *lwdStreamer) GetTreeState(ctx context.Context, id *walletrpc.BlockID) (
 		}
 		params[0] = hashJSON
 	}
+	
+	result, rpcErr := common.RawRequest("z_gettreestate", params)
+	if rpcErr != nil {
+		return nil, rpcErr
+	}
+	
 	var gettreestateReply common.PiratedRpcReplyGettreestate
-	for {
-		result, rpcErr := common.RawRequest("z_gettreestate", params)
-		if rpcErr != nil {
-			return nil, rpcErr
-		}
-		err := json.Unmarshal(result, &gettreestateReply)
-		if err != nil {
-			return nil, err
-		}
-		if gettreestateReply.Sapling.Commitments.FinalState != "" {
-			break
-		}
-		if gettreestateReply.SaplingFrontier.Commitments.FinalState != "" {
-			break
-		}
-		if gettreestateReply.Sapling.SkipHash == "" {
-			break
-		}
-		if gettreestateReply.SaplingFrontier.SkipHash == "" {
-			break
-		}
-		hashJSON, err = json.Marshal(gettreestateReply.SaplingFrontier.SkipHash)
-		if err != nil {
-			return nil, err
-		}
-		params[0] = hashJSON
+	err := json.Unmarshal(result, &gettreestateReply)
+	if err != nil {
+		return nil, err
 	}
-	if gettreestateReply.Sapling.Commitments.FinalState == "" {
-		return nil, errors.New("pirated did not return treestate")
+	
+	// Use Sapling finalState if available, otherwise use finalRoot
+	saplingTree := gettreestateReply.Sapling.Commitments.FinalState
+	if saplingTree == "" {
+		saplingTree = gettreestateReply.Sapling.Commitments.FinalRoot
 	}
-	if gettreestateReply.SaplingFrontier.Commitments.FinalState == "" {
-		return nil, errors.New("pirated did not return frontierstate")
+	
+	// Use Orchard finalState if available, otherwise use finalRoot  
+	orchardTree := gettreestateReply.Orchard.Commitments.FinalState
+	if orchardTree == "" {
+		orchardTree = gettreestateReply.Orchard.Commitments.FinalRoot
 	}
+	
 	return &walletrpc.TreeState{
-		Network:     				s.chainName,
-		Height:      				uint64(gettreestateReply.Height),
-		Hash:        				gettreestateReply.Hash,
-		Time:        				gettreestateReply.Time,
-		SaplingTree: 				gettreestateReply.Sapling.Commitments.FinalState,
-		SaplingFrontier: 		gettreestateReply.SaplingFrontier.Commitments.FinalState,
-		OrchardTree: 				gettreestateReply.Orchard.Commitments.FinalState,
+		Network:     s.chainName,
+		Height:      uint64(gettreestateReply.Height),
+		Hash:        gettreestateReply.Hash,
+		Time:        gettreestateReply.Time,
+		SaplingTree: saplingTree,
+		OrchardTree: orchardTree,
 	}, nil
 }
 

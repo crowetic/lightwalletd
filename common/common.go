@@ -108,27 +108,25 @@ type (
 
 	// pirated rpc "z_gettreestate"
 	PiratedRpcReplyGettreestate struct {
-		Height  int
-		Hash    string
-		Time    uint32
+		Height  int    `json:"height"`
+		Hash    string `json:"hash"`
+		Time    uint32 `json:"time"`
 		Sapling struct {
+			Active      bool   `json:"active"`
+			SkipHash    string `json:"skipHash,omitempty"`
 			Commitments struct {
-				FinalState string
-			}
-			SkipHash string
-		}
-		SaplingFrontier struct {
-			Commitments struct {
-				FinalState string
-			}
-			SkipHash string
-		}
+				FinalRoot  string `json:"finalRoot"`
+				FinalState string `json:"finalState,omitempty"`
+			} `json:"commitments"`
+		} `json:"sapling"`
 		Orchard struct {
+			Active      bool   `json:"active"`
+			SkipHash    string `json:"skipHash,omitempty"`
 			Commitments struct {
-				FinalState string
-			}
-			SkipHash string
-		}
+				FinalRoot  string `json:"finalRoot"`
+				FinalState string `json:"finalState,omitempty"`
+			} `json:"commitments"`
+		} `json:"orchard"`
 	}
 
 	// pirated rpc "getrawtransaction txid 1" (1 means verbose), there are
