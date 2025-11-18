@@ -106,11 +106,40 @@ type (
 		End       uint64   `json:"end"`
 	}
 
-	// pirated rpc "z_gettreestate"
+	// pirated rpc "z_gettreestatelegacy" (legacy format for backward compatibility)
 	PiratedRpcReplyGettreestate struct {
 		Height  int    `json:"height"`
 		Hash    string `json:"hash"`
 		Time    uint32 `json:"time"`
+		Sprout  struct {
+			SkipHash    string `json:"skipHash,omitempty"`
+			Commitments struct {
+				FinalRoot  string `json:"finalRoot"`
+				FinalState string `json:"finalState,omitempty"`
+			} `json:"commitments"`
+		} `json:"sprout"`
+		Sapling struct {
+			SkipHash    string `json:"skipHash,omitempty"`
+			Commitments struct {
+				FinalRoot  string `json:"finalRoot"`
+				FinalState string `json:"finalState,omitempty"`
+			} `json:"commitments"`
+		} `json:"sapling"`
+	}
+
+	// pirated rpc "z_gettreestate" (new format with bridge trees)
+	PiratedRpcReplyGettreestateBridge struct {
+		Height  int    `json:"height"`
+		Hash    string `json:"hash"`
+		Time    uint32 `json:"time"`
+		Sprout  struct {
+			Active      bool   `json:"active"`
+			SkipHash    string `json:"skipHash,omitempty"`
+			Commitments struct {
+				FinalRoot  string `json:"finalRoot"`
+				FinalState string `json:"finalState,omitempty"`
+			} `json:"commitments"`
+		} `json:"sprout"`
 		Sapling struct {
 			Active      bool   `json:"active"`
 			SkipHash    string `json:"skipHash,omitempty"`

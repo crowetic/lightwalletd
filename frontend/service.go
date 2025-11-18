@@ -347,7 +347,59 @@ func (s *lwdStreamer) GetBlockRange(span *walletrpc.BlockRange, resp walletrpc.C
 // See section 3.7 of the Zcash protocol specification. It returns several other useful
 // values also (even though they can be obtained using GetBlock).
 // The block can be specified by either height or hash.
+// This function uses the legacy z_gettreestatelegacy RPC for backward compatibility.
 func (s *lwdStreamer) GetTreeState(ctx context.Context, id *walletrpc.BlockID) (*walletrpc.TreeState, error) {
+	if id.Height == 0 && id.Hash == nil {
+		return nil, errors.New("request for unspecified identifier")
+	}
+	// The Zcash z_gettreestatelegacy rpc accepts either a block height or block hash
+	params := make([]json.RawMessage, 1)
+	if id.Height > 0 {
+		heightJSON, err := json.Marshal(strconv.Itoa(int(id.Height)))
+		if err != nil {
+			return nil, err
+		}
+		params[0] = heightJSON
+	} else {
+		// id.Hash is big-endian, keep in big-endian for the rpc
+		hashJSON, err := json.Marshal(hex.EncodeToString(id.Hash))
+		if err != nil {
+			return nil, err
+		}
+		params[0] = hashJSON
+	}
+	
+	result, rpcErr := common.RawRequest("z_gettreestatelegacy", params)
+	if rpcErr != nil {
+		return nil, rpcErr
+	}
+	
+	var gettreestateReply common.PiratedRpcReplyGettreestate
+	err := json.Unmarshal(result, &gettreestateReply)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Use Sapling finalState if available, otherwise use finalRoot
+	saplingTree := gettreestateReply.Sapling.Commitments.FinalState
+	if saplingTree == "" {
+		saplingTree = gettreestateReply.Sapling.Commitments.FinalRoot
+	}
+	
+	return &walletrpc.TreeState{
+		Network:     s.chainName,
+		Height:      uint64(gettreestateReply.Height),
+		Hash:        gettreestateReply.Hash,
+		Time:        gettreestateReply.Time,
+		SaplingTree: saplingTree,
+		OrchardTree: "", // Legacy format does not support Orchard
+	}, nil
+}
+
+// GetTreeStateBridge returns the note commitment tree state with bridge tree support.
+// This function uses the updated z_gettreestate RPC which includes the new bridge trees format.
+// The block can be specified by either height or hash.
+func (s *lwdStreamer) GetTreeStateBridge(ctx context.Context, id *walletrpc.BlockID) (*walletrpc.TreeState, error) {
 	if id.Height == 0 && id.Hash == nil {
 		return nil, errors.New("request for unspecified identifier")
 	}
@@ -373,7 +425,7 @@ func (s *lwdStreamer) GetTreeState(ctx context.Context, id *walletrpc.BlockID) (
 		return nil, rpcErr
 	}
 	
-	var gettreestateReply common.PiratedRpcReplyGettreestate
+	var gettreestateReply common.PiratedRpcReplyGettreestateBridge
 	err := json.Unmarshal(result, &gettreestateReply)
 	if err != nil {
 		return nil, err

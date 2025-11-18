@@ -57,7 +57,12 @@ type CompactTxStreamerClient interface {
 	// See section 3.7 of the Zcash protocol specification. It returns several other useful
 	// values also (even though they can be obtained using GetBlock).
 	// The block can be specified by either height or hash.
+	// Uses legacy z_gettreestatelegacy RPC for backward compatibility.
 	GetTreeState(ctx context.Context, in *BlockID, opts ...grpc.CallOption) (*TreeState, error)
+	// GetTreeStateBridge returns the note commitment tree state with bridge tree support.
+	// This uses the updated z_gettreestate RPC which includes the new bridge trees format.
+	// The block can be specified by either height or hash.
+	GetTreeStateBridge(ctx context.Context, in *BlockID, opts ...grpc.CallOption) (*TreeState, error)
 	GetAddressUtxos(ctx context.Context, in *GetAddressUtxosArg, opts ...grpc.CallOption) (*GetAddressUtxosReplyList, error)
 	GetAddressUtxosStream(ctx context.Context, in *GetAddressUtxosArg, opts ...grpc.CallOption) (CompactTxStreamer_GetAddressUtxosStreamClient, error)
 	// Return information about this lightwalletd instance and the blockchain
@@ -317,6 +322,15 @@ func (c *compactTxStreamerClient) GetTreeState(ctx context.Context, in *BlockID,
 	return out, nil
 }
 
+func (c *compactTxStreamerClient) GetTreeStateBridge(ctx context.Context, in *BlockID, opts ...grpc.CallOption) (*TreeState, error) {
+	out := new(TreeState)
+	err := c.cc.Invoke(ctx, "/pirate.wallet.sdk.rpc.CompactTxStreamer/GetTreeStateBridge", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *compactTxStreamerClient) GetAddressUtxos(ctx context.Context, in *GetAddressUtxosArg, opts ...grpc.CallOption) (*GetAddressUtxosReplyList, error) {
 	out := new(GetAddressUtxosReplyList)
 	err := c.cc.Invoke(ctx, "/pirate.wallet.sdk.rpc.CompactTxStreamer/GetAddressUtxos", in, out, opts...)
@@ -415,7 +429,12 @@ type CompactTxStreamerServer interface {
 	// See section 3.7 of the Zcash protocol specification. It returns several other useful
 	// values also (even though they can be obtained using GetBlock).
 	// The block can be specified by either height or hash.
+	// Uses legacy z_gettreestatelegacy RPC for backward compatibility.
 	GetTreeState(context.Context, *BlockID) (*TreeState, error)
+	// GetTreeStateBridge returns the note commitment tree state with bridge tree support.
+	// This uses the updated z_gettreestate RPC which includes the new bridge trees format.
+	// The block can be specified by either height or hash.
+	GetTreeStateBridge(context.Context, *BlockID) (*TreeState, error)
 	GetAddressUtxos(context.Context, *GetAddressUtxosArg) (*GetAddressUtxosReplyList, error)
 	GetAddressUtxosStream(*GetAddressUtxosArg, CompactTxStreamer_GetAddressUtxosStreamServer) error
 	// Return information about this lightwalletd instance and the blockchain
@@ -470,6 +489,9 @@ func (UnimplementedCompactTxStreamerServer) GetMempoolStream(*Empty, CompactTxSt
 }
 func (UnimplementedCompactTxStreamerServer) GetTreeState(context.Context, *BlockID) (*TreeState, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTreeState not implemented")
+}
+func (UnimplementedCompactTxStreamerServer) GetTreeStateBridge(context.Context, *BlockID) (*TreeState, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTreeStateBridge not implemented")
 }
 func (UnimplementedCompactTxStreamerServer) GetAddressUtxos(context.Context, *GetAddressUtxosArg) (*GetAddressUtxosReplyList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAddressUtxos not implemented")
@@ -768,6 +790,24 @@ func _CompactTxStreamer_GetTreeState_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CompactTxStreamer_GetTreeStateBridge_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BlockID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CompactTxStreamerServer).GetTreeStateBridge(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pirate.wallet.sdk.rpc.CompactTxStreamer/GetTreeStateBridge",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CompactTxStreamerServer).GetTreeStateBridge(ctx, req.(*BlockID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CompactTxStreamer_GetAddressUtxos_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetAddressUtxosArg)
 	if err := dec(in); err != nil {
@@ -885,6 +925,10 @@ var CompactTxStreamer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTreeState",
 			Handler:    _CompactTxStreamer_GetTreeState_Handler,
+		},
+		{
+			MethodName: "GetTreeStateBridge",
+			Handler:    _CompactTxStreamer_GetTreeStateBridge_Handler,
 		},
 		{
 			MethodName: "GetAddressUtxos",
