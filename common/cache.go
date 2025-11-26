@@ -250,10 +250,10 @@ func NewBlockCache(dbPath string, chainName string, startHeight int, syncFromHei
 		offset += int64(length) + 8
 		c.starts = append(c.starts, offset)
 		// Check for corruption.
-		block := c.readBlock(c.nextBlock)
+		block := c.readBlock(c.firstBlock + i)
 		if block == nil {
-			Log.Warning("error reading block")
-			c.recoverFromCorruption(c.nextBlock)
+			Log.Warning("error reading block at height ", c.firstBlock+i)
+			c.recoverFromCorruption(c.firstBlock + i)
 			break
 		}
 		c.nextBlock++
