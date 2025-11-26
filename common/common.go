@@ -128,7 +128,7 @@ type (
 	}
 
 	// pirated rpc "z_gettreestate" (new format with bridge trees)
-	PiratedRpcReplyGettreestateBridge struct {
+	PiratedRpcReplyGetbridgetreestate struct {
 		Height  int    `json:"height"`
 		Hash    string `json:"hash"`
 		Time    uint32 `json:"time"`

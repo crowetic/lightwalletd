@@ -396,10 +396,10 @@ func (s *lwdStreamer) GetTreeState(ctx context.Context, id *walletrpc.BlockID) (
 	}, nil
 }
 
-// GetTreeStateBridge returns the note commitment tree state with bridge tree support.
-// This function uses the updated z_gettreestate RPC which includes the new bridge trees format.
+// GetBridgeTreeState returns the note commitment tree state with bridge tree support.
+// This uses the updated z_gettreestate RPC which includes the new bridge trees format.
 // The block can be specified by either height or hash.
-func (s *lwdStreamer) GetTreeStateBridge(ctx context.Context, id *walletrpc.BlockID) (*walletrpc.TreeState, error) {
+func (s *lwdStreamer) GetBridgeTreeState(ctx context.Context, id *walletrpc.BlockID) (*walletrpc.TreeState, error) {
 	if id.Height == 0 && id.Hash == nil {
 		return nil, errors.New("request for unspecified identifier")
 	}
@@ -424,8 +424,8 @@ func (s *lwdStreamer) GetTreeStateBridge(ctx context.Context, id *walletrpc.Bloc
 	if rpcErr != nil {
 		return nil, rpcErr
 	}
-	
-	var gettreestateReply common.PiratedRpcReplyGettreestateBridge
+
+	var gettreestateReply common.PiratedRpcReplyGetbridgetreestate
 	err := json.Unmarshal(result, &gettreestateReply)
 	if err != nil {
 		return nil, err

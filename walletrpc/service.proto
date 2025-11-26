@@ -204,10 +204,10 @@ service CompactTxStreamer {
     // Uses legacy z_gettreestatelegacy RPC for backward compatibility.
     rpc GetTreeState(BlockID) returns (TreeState) {}
 
-    // GetTreeStateBridge returns the note commitment tree state with bridge tree support.
+    // GetBridgeTreeState returns the note commitment tree state with bridge tree support.
     // This uses the updated z_gettreestate RPC which includes the new bridge trees format.
     // The block can be specified by either height or hash.
-    rpc GetTreeStateBridge(BlockID) returns (TreeState) {}
+    rpc GetBridgeTreeState(BlockID) returns (TreeState) {}
 
     rpc GetAddressUtxos(GetAddressUtxosArg) returns (GetAddressUtxosReplyList) {}
     rpc GetAddressUtxosStream(GetAddressUtxosArg) returns (stream GetAddressUtxosReply) {}

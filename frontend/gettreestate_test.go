@@ -150,7 +150,7 @@ func TestGetTreeStateErrors(t *testing.T) {
 	}
 }
 
-// Tests for GetTreeStateBridge (new bridge trees format)
+// Tests for GetBridgeTreeState (new bridge trees format)
 
 func z_gettreestateBridgeStub(method string, params []json.RawMessage) (json.RawMessage, error) {
 	if method != "z_gettreestate" {
@@ -188,7 +188,7 @@ func z_gettreestateBridgeStub(method string, params []json.RawMessage) (json.Raw
 	return json.RawMessage(mockResponse), nil
 }
 
-func TestGetTreeStateBridge(t *testing.T) {
+func TestGetBridgeTreeState(t *testing.T) {
 	testT = t
 	common.RawRequest = z_gettreestateBridgeStub
 	lwdInterface, _ := testsetup()
@@ -199,9 +199,9 @@ func TestGetTreeStateBridge(t *testing.T) {
 
 	// Test with height
 	blockID := &walletrpc.BlockID{Height: 100200}
-	treeState, err := lwd.GetTreeStateBridge(context.Background(), blockID)
+	treeState, err := lwd.GetBridgeTreeState(context.Background(), blockID)
 	if err != nil {
-		t.Fatal("GetTreeStateBridge failed with height:", err)
+		t.Fatal("GetBridgeTreeState failed with height:", err)
 	}
 
 	// Verify the response
@@ -228,9 +228,9 @@ func TestGetTreeStateBridge(t *testing.T) {
 	// Test with hash
 	hashBytes := []byte{0x00, 0x00, 0x00, 0x00, 0x01, 0x23, 0x45, 0x67, 0x89, 0x01, 0x23, 0x45, 0x67, 0x89, 0x01, 0x23, 0x45, 0x67, 0x89, 0x01, 0x23, 0x45, 0x67, 0x89, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef}
 	blockID = &walletrpc.BlockID{Hash: hashBytes}
-	treeState, err = lwd.GetTreeStateBridge(context.Background(), blockID)
+	treeState, err = lwd.GetBridgeTreeState(context.Background(), blockID)
 	if err != nil {
-		t.Fatal("GetTreeStateBridge failed with hash:", err)
+		t.Fatal("GetBridgeTreeState failed with hash:", err)
 	}
 
 	// Should get the same result
@@ -272,7 +272,7 @@ func z_gettreestateBridgeStubFallbackToRoot(method string, params []json.RawMess
 	return json.RawMessage(mockResponse), nil
 }
 
-func TestGetTreeStateBridgeFallbackToRoot(t *testing.T) {
+func TestGetBridgeTreeStateFallbackToRoot(t *testing.T) {
 	testT = t
 	common.RawRequest = z_gettreestateBridgeStubFallbackToRoot
 	lwdInterface, _ := testsetup()
@@ -282,9 +282,9 @@ func TestGetTreeStateBridgeFallbackToRoot(t *testing.T) {
 	}
 
 	blockID := &walletrpc.BlockID{Height: 100200}
-	treeState, err := lwd.GetTreeStateBridge(context.Background(), blockID)
+	treeState, err := lwd.GetBridgeTreeState(context.Background(), blockID)
 	if err != nil {
-		t.Fatal("GetTreeStateBridge failed:", err)
+		t.Fatal("GetBridgeTreeState failed:", err)
 	}
 
 	// Check that we fallback to finalRoot when finalState is not available
@@ -296,7 +296,7 @@ func TestGetTreeStateBridgeFallbackToRoot(t *testing.T) {
 	}
 }
 
-func TestGetTreeStateBridgeErrors(t *testing.T) {
+func TestGetBridgeTreeStateErrors(t *testing.T) {
 	testT = t
 	lwdInterface, _ := testsetup()
 	lwd, ok := lwdInterface.(*lwdStreamer)
@@ -306,9 +306,9 @@ func TestGetTreeStateBridgeErrors(t *testing.T) {
 
 	// Test with no identifier
 	blockID := &walletrpc.BlockID{}
-	_, err := lwd.GetTreeStateBridge(context.Background(), blockID)
+	_, err := lwd.GetBridgeTreeState(context.Background(), blockID)
 	if err == nil {
-		t.Fatal("GetTreeStateBridge should have failed with no identifier")
+		t.Fatal("GetBridgeTreeState should have failed with no identifier")
 	}
 	if err.Error() != "request for unspecified identifier" {
 		t.Fatal("Unexpected error message:", err.Error())
