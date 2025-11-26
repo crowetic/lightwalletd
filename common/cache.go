@@ -122,13 +122,17 @@ func (c *BlockCache) recoverFromCorruption(height int) {
 
 // not including the checksum
 func (c *BlockCache) blockLength(height int) int {
-
-	//Don't check block that will be out of index
-	if height < c.firstBlock || height >= c.nextBlock {
+	// Don't check block that will be out of index
+	if height < c.firstBlock {
 		return 0
 	}
 
 	index := height - c.firstBlock
+	// Need at least two entries in c.starts: start for this block and for the next
+	if index+1 >= len(c.starts) {
+		return 0
+	}
+
 	return int(c.starts[index+1] - c.starts[index] - 8)
 }
 
@@ -250,10 +254,10 @@ func NewBlockCache(dbPath string, chainName string, startHeight int, syncFromHei
 		offset += int64(length) + 8
 		c.starts = append(c.starts, offset)
 		// Check for corruption.
-		block := c.readBlock(c.firstBlock + i)
+		block := c.readBlock(c.nextBlock)
 		if block == nil {
-			Log.Warning("error reading block at height ", c.firstBlock+i)
-			c.recoverFromCorruption(c.firstBlock + i)
+			Log.Warning("error reading block")
+			c.recoverFromCorruption(c.nextBlock)
 			break
 		}
 		c.nextBlock++
