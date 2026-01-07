@@ -35,6 +35,8 @@ var (
 
 	// Full path of the persistence file
 	pricesFileName string
+
+	startPriceFetcherOnce sync.Once
 )
 
 func fetchAPIPrice(url string, resultPath []string) (float64, error) {
@@ -421,4 +423,11 @@ func StartPriceFetcher(dbPath string, chainName string) {
 			time.Sleep(15 * time.Minute)
 		}
 	}()
+}
+
+// EnsurePriceFetcherStarted lazily starts the price fetcher once.
+func EnsurePriceFetcherStarted(dbPath string, chainName string) {
+	startPriceFetcherOnce.Do(func() {
+		StartPriceFetcher(dbPath, chainName)
+	})
 }

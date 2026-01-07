@@ -270,7 +270,7 @@ func startServer(opts *common.Options) error {
 
 	// Compact transaction service initialization
 	{
-		service, err := frontend.NewLwdStreamer(cache, chainName, opts.PingEnable)
+		service, err := frontend.NewLwdStreamer(cache, dbPath, chainName, opts.PingEnable)
 		if err != nil {
 			common.Log.WithFields(logrus.Fields{
 				"error": err,
@@ -287,9 +287,6 @@ func startServer(opts *common.Options) error {
 		}
 		walletrpc.RegisterDarksideStreamerServer(server, service)
 	}
-
-	// Initialize price fetcher
-	common.StartPriceFetcher(dbPath, chainName)
 
 	// Start listening
 	listener, err := net.Listen("tcp", opts.GRPCBindAddr)

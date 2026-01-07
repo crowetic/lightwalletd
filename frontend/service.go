@@ -38,6 +38,7 @@ type latencyCacheEntry struct {
 
 type lwdStreamer struct {
 	cache      *common.BlockCache
+	dbPath     string
 	chainName  string
 	pingEnable bool
 	walletrpc.UnimplementedCompactTxStreamerServer
@@ -46,8 +47,8 @@ type lwdStreamer struct {
 }
 
 // NewLwdStreamer constructs a gRPC context.
-func NewLwdStreamer(cache *common.BlockCache, chainName string, enablePing bool) (walletrpc.CompactTxStreamerServer, error) {
-	return &lwdStreamer{cache: cache, chainName: chainName, pingEnable: enablePing, latencyCache: make(map[string]*latencyCacheEntry), latencyMutex: sync.RWMutex{}}, nil
+func NewLwdStreamer(cache *common.BlockCache, dbPath string, chainName string, enablePing bool) (walletrpc.CompactTxStreamerServer, error) {
+	return &lwdStreamer{cache: cache, dbPath: dbPath, chainName: chainName, pingEnable: enablePing, latencyCache: make(map[string]*latencyCacheEntry), latencyMutex: sync.RWMutex{}}, nil
 }
 
 // DarksideStreamer holds the gRPC state for darksidewalletd.
@@ -90,6 +91,8 @@ func (s *lwdStreamer) dailyActiveBlock(height uint64, peerip string) {
 }
 
 func (s *lwdStreamer) GetARRRPrice(ctx context.Context, in *walletrpc.PriceRequest) (*walletrpc.PriceResponse, error) {
+	common.EnsurePriceFetcherStarted(s.dbPath, s.chainName)
+
 	// Check for prices before zcash was born
 	if in == nil || in.Timestamp <= 1477551600 /* Zcash birthday: 2016-10-28*/ {
 		common.Metrics.ArrrPriceHistoryErrors.Inc()
@@ -113,6 +116,8 @@ func (s *lwdStreamer) GetARRRPrice(ctx context.Context, in *walletrpc.PriceReque
 }
 
 func (s *lwdStreamer) GetCurrentARRRPrice(ctx context.Context, in *walletrpc.Empty) (*walletrpc.PriceResponse, error) {
+	common.EnsurePriceFetcherStarted(s.dbPath, s.chainName)
+
 	price, err := common.GetCurrentPrice()
 	if err != nil {
 		common.Metrics.ArrrPriceGauge.Set(0)
